@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 Created on Tue Nov 27 08:44:58 2012
 
@@ -46,13 +46,13 @@ def searchurl(root_blog = "http://blog.leniy.info"):
                 values = {host: x[1]}
                 tempurl.update(values)
     #若异常，打印HTTPError返回值
-    except urllib2.HTTPError, e:
-        print e.code
+    except:
+        print "==================\n",root_blog," can't open\n==================\n"
 
     return {root_host: tempurl}
 
 def main():
-    starturl = 'linuxtoy.org'
+    starturl = 'xiaoxia.org'
     allurl = {}
     temp = searchurl("http://" + starturl)
     allurl.update(temp)
@@ -64,3 +64,4 @@ def main():
 
 
 main()
+print "=======================\n\n\n OK!!!"
