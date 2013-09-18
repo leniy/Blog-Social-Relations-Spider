@@ -69,39 +69,78 @@ def regex_external_url(list_in):
 
 	return tempurl
 
+def createDB():
+	"""
+	功能：创建数据库，只需执行一次
+	"""
+	try:
+		conn=MySQLdb.connect(host='localhost',user='root',passwd='leniy.org',port=3306)
+		cur=conn.cursor()
+		cur.execute('create database if not exists python')
+		conn.select_db('python')
+		cur.execute('CREATE TABLE if not exists test(`ID` INT( 10 ) UNSIGNED NOT NULL AUTO_INCREMENT , `host` VARCHAR( 50 ) NOT NULL , `queryornot` INT( 1 ) NOT NULL DEFAULT "0",PRIMARY KEY ( `ID` ) ,UNIQUE KEY  `host` (  `host` )) ENGINE = MYISAM DEFAULT CHARSET = utf8 AUTO_INCREMENT =1;')
+		cur.execute('INSERT INTO `test` (`host`, `queryornot`) VALUES ("leniy.org", "0");') #创建一个种子，后续程序从这儿开始检索
+		conn.commit()
+		cur.close()
+		conn.close()
+	except:
+		print "数据库创建错误"
+
+def GetOneSeed():
+	"""
+	功能：从数据库中提取一枚种子（即没有检索过的域名，即mysql的queryornot项为0的值）
+	输入值：无
+	返回值：一个域名
+	"""
+	try:
+		conn=MySQLdb.connect(host='localhost',user='root',passwd='leniy.org',port=3306)
+		cur=conn.cursor()
+		conn.select_db('python')
+		#下面开始提取一枚种子
+		cur.execute('SELECT host FROM `test` WHERE `queryornot` =0 LIMIT 1')
+		result=cur.fetchone()
+		result_host = result[0]
+		conn.commit()
+		cur.close()
+		conn.close()
+		return result_host
+	except:
+		return "None"
+
+def GainSeeds(seedhost):
+	"""
+	功能：种下种子，然后收获。即检索seedhost的页面，输出外部链接的域名，并写回数据库
+	输入：域名
+	输出：将匹配的域名写入数据库，返回值是增加的种子的个数，及字典temp_url_dict的长度
+	"""
+	try:
+		temp_url_dict = regex_external_url(get_content_from_url(get_url_from_host(seedhost)))
+		conn=MySQLdb.connect(host='localhost',user='root',passwd='leniy.org',port=3306)
+		cur=conn.cursor()
+		conn.select_db('python')
+		for k in temp_url_dict:
+			try:
+				cur.execute('INSERT INTO `test` (`host`, `queryornot`) VALUES (%s, "0");',k)
+			except:
+				buzhixing = 1
+				#print k + "已经存在，无需重复插入"
+		#seedhost这个种子已经被读取过了，防止未来重复读取，需标记其已经读取过（即设置queryornot项为1）
+		cur.execute('UPDATE `test` SET `queryornot` =  "1" WHERE `test`.`host` LIKE %s;',seedhost)
+		conn.commit()
+		cur.close()
+		conn.close()
+		return len(temp_url_dict)
+	except:
+		print temp_url_dict
+
 def main():
-	starturl = "blog.leniy.org/liuyan"
-	temp = regex_external_url(get_content_from_url(get_url_from_host(starturl)))
-	print temp
-	for k in temp:
-		print regex_external_url(get_content_from_url(get_url_from_host(k)))
-		print '\n=====================================\n'
+	a = GetOneSeed()
+	len = GainSeeds(a) #开始检索，并获得预计的个数
+	print "将增加：" + str(len) + "个种子"
 
+	#再向外扩充一层
+	for x in range(1,len+1):
+		b = GetOneSeed()
+		print str(x) + ":" + b + "（增加个数：" + str(GainSeeds(b)) + "）"
 
-#main()
-
-try:
-	conn=MySQLdb.connect(host='localhost',user='root',passwd='leniy.org',port=3306)
-	cur=conn.cursor()
-
-	cur.execute('create database if not exists python')
-	conn.select_db('python')
-	cur.execute('create table test(id int,info varchar(20))')
-
-	value=[1,'hi rollen']
-	cur.execute('insert into test values(%s,%s)',value)
-
-	values=[]
-	for i in range(20):
-		values.append((i,'hi rollen'+str(i)))
-
-	cur.executemany('insert into test values(%s,%s)',values)
-
-	cur.execute('update test set info="I am rollen" where id=3')
-
-	conn.commit()
-	cur.close()
-	conn.close()
-
-except MySQLdb.Error,e:
-	print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+main()
