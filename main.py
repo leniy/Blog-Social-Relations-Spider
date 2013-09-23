@@ -107,7 +107,7 @@ def GetOneSeed():
 	except:
 		return "None"
 
-def GainSeeds(seedhost):
+def GrownSeed(seedhost):
 	"""
 	功能：种下种子，然后收获。即检索seedhost的页面，输出外部链接的域名，并写回数据库
 	输入：域名
@@ -135,12 +135,12 @@ def GainSeeds(seedhost):
 
 def main():
 	a = GetOneSeed()
-	len = GainSeeds(a) #开始检索，并获得预计的个数
+	len = GrownSeed(a) #开始检索，并获得预计的个数
 	print "将增加：" + str(len) + "个种子"
 
 	#再向外扩充一层
-	for x in range(1,len+1):
+	for x in range(1,len+10000):
 		b = GetOneSeed()
-		print str(x) + ":" + b + "（增加个数：" + str(GainSeeds(b)) + "）"
+		print str(x) + ":" + b + "（增加个数：" + str(GrownSeed(b)) + "）"
 
 main()
